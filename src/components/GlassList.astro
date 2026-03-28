@@ -1,0 +1,308 @@
+---
+const items = [
+    {
+        title: "Portfolio",
+        href: "https://github.com/realtextviolence/Portfolio",
+        meta: "Personal portfolio site built with Astro",
+    },
+    {
+        title: "Skills",
+        href: "https://github.com/realtextviolence/Skills",
+        meta: "Custom skills for Claude Code",
+    },
+];
+---
+
+<div
+    id="glassList"
+    class="relative flex z-10 flex-col gap-2 w-fit shrink-0 -mx-4 cursor-pointer"
+>
+    <div
+        class="absolute inset-0 pointer-events-none -z-10"
+        style="perspective:1400px"
+    >
+        <span
+            id="glassPanel"
+            aria-hidden="true"
+            class="absolute overflow-hidden liquid-glass pointer-events-none transform-gpu will-change-transform"
+            style="opacity:0"
+        >
+            <div
+                id="glassSpecular"
+                class="absolute inset-0 pointer-events-none rounded-2xl opacity-90 liquid-glass-highlight"
+                style="--lgh:28px; --lg-opacity:0.7; --lgy:50%"
+            >
+            </div>
+        </span>
+    </div>
+
+    {
+        items.map((item) => (
+            <span class="glass-item inline w-fit cursor-pointer fade-child">
+                <a
+                    class="relative inline-flex flex-col gap-1 py-2 px-4 no-underline cursor-pointer text-black"
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <span class="item-inner inline-flex flex-col gap-1 transform-gpu will-change-transform">
+                        <span class="underline decoration-zinc-100 underline-offset-2 decoration-2">
+                            {item.title}
+                        </span>
+                        <span class="text-sm font-normal text-zinc-400">
+                            {item.meta}
+                        </span>
+                    </span>
+                </a>
+            </span>
+        ))
+    }
+</div>
+
+<script>
+    class Spring {
+        value: number;
+        target: number;
+        velocity: number;
+        stiffness: number;
+        damping: number;
+
+        constructor(value: number, { duration = 0.6, bounce = 0.15 } = {}) {
+            const w = (2 * Math.PI) / Math.max(0.05, duration);
+            const d = 1 - Math.max(0, Math.min(1, bounce));
+            this.stiffness = w * w;
+            this.damping = 2 * d * w;
+            this.value = this.target = value;
+            this.velocity = 0;
+        }
+        set(t: number) {
+            this.target = t;
+        }
+        step(dt: number) {
+            const x = this.value - this.target;
+            this.velocity +=
+                (-this.stiffness * x - this.damping * this.velocity) * dt;
+            this.value += this.velocity * dt;
+            return this.value;
+        }
+    }
+
+    const list = document.getElementById("glassList")!;
+    const panel = document.getElementById("glassPanel") as HTMLElement;
+    const specular = document.getElementById("glassSpecular") as HTMLElement;
+    const items = Array.from(list.querySelectorAll<HTMLElement>(".glass-item"));
+
+    let activeIdx: number | null = null;
+    let isVisible = false;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let currentRect: {
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+    } | null = null;
+    let origin = { ox: 50, oy: 50 };
+
+    const sp = {
+        top: new Spring(0, { duration: 0.72, bounce: 0.22 }),
+        left: new Spring(0, { duration: 0.72, bounce: 0.22 }),
+        width: new Spring(0, { duration: 0.72, bounce: 0.22 }),
+        height: new Spring(0, { duration: 0.72, bounce: 0.22 }),
+        opacity: new Spring(0, { duration: 0.8, bounce: 0 }),
+        rx: new Spring(0, { duration: 0.45, bounce: 0.06 }),
+        ry: new Spring(0, { duration: 0.45, bounce: 0.06 }),
+        sx: new Spring(0, { duration: 0.6, bounce: 0.15 }),
+        sy: new Spring(0, { duration: 0.6, bounce: 0.15 }),
+        br: new Spring(16, { duration: 0.6, bounce: 0 }),
+    };
+
+    const itemSp = items.map(() => ({
+        x: new Spring(0, { duration: 0.6, bounce: 0.15 }),
+        y: new Spring(0, { duration: 0.6, bounce: 0.15 }),
+    }));
+
+    function itemRect(idx: number) {
+        const lr = list.getBoundingClientRect();
+        const ir = items[idx].getBoundingClientRect();
+        return {
+            top: ir.top - lr.top,
+            left: ir.left - lr.left,
+            width: ir.width,
+            height: ir.height,
+        };
+    }
+
+    function curve(v: number, p: number) {
+        const c = Math.max(-1, Math.min(1, v));
+        return (
+            Math.sign(c) * (1 - Math.pow(1 - Math.abs(c), 1 / Math.max(1, p)))
+        );
+    }
+
+    function enter(idx: number) {
+        if (hideTimer) clearTimeout(hideTimer);
+        activeIdx = idx;
+        isVisible = true;
+        currentRect = itemRect(idx);
+        sp.top.set(currentRect.top);
+        sp.left.set(currentRect.left);
+        sp.width.set(currentRect.width);
+        sp.height.set(currentRect.height);
+        sp.opacity.set(1);
+    }
+
+    function leave() {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+            activeIdx = null;
+            isVisible = false;
+            sp.opacity.set(0);
+            sp.rx.set(0);
+            sp.ry.set(0);
+            sp.sx.set(0);
+            sp.sy.set(0);
+            itemSp.forEach((s) => {
+                s.x.set(0);
+                s.y.set(0);
+            });
+        }, 500);
+    }
+
+    function onMove(e: MouseEvent) {
+        const lr = list.getBoundingClientRect();
+        let n: number,
+            r: number,
+            a: number,
+            l = 50,
+            o = 50;
+
+        if (currentRect) {
+            const px = lr.left + currentRect.left,
+                py = lr.top + currentRect.top;
+            const pw = Math.max(1, currentRect.width),
+                ph = Math.max(1, currentRect.height);
+            n = Math.max(
+                -1,
+                Math.min(1, (e.clientX - (px + pw / 2)) / (pw / 2)),
+            );
+            r = Math.max(
+                -1,
+                Math.min(1, (e.clientY - (py + ph / 2)) / (ph / 2)),
+            );
+            a = Math.max(1, pw / ph);
+            l = 30 + 40 * Math.max(0, Math.min(1, (e.clientX - px) / pw));
+            o = 30 + 40 * Math.max(0, Math.min(1, (e.clientY - py) / ph));
+        } else {
+            n = Math.max(
+                -1,
+                Math.min(1, ((e.clientX - lr.left) / lr.width - 0.5) * 2),
+            );
+            r = Math.max(
+                -1,
+                Math.min(1, ((e.clientY - lr.top) / lr.height - 0.5) * 2),
+            );
+            a = Math.max(1, lr.width / Math.max(1, lr.height));
+        }
+
+        origin.ox = l;
+        origin.oy = o;
+        sp.rx.set(-r * Math.min(1.6, 0.7 + 0.18 * a));
+        sp.ry.set(0.8 * n);
+        sp.sx.set(12 * curve(n, 2));
+        sp.sy.set(8 * curve(r, 2));
+
+        items.forEach((_, i) => {
+            if (i === activeIdx && isVisible) {
+                itemSp[i].x.set(sp.sx.target * 0.18);
+                itemSp[i].y.set(sp.sy.target * 0.18);
+            } else {
+                itemSp[i].x.set(0);
+                itemSp[i].y.set(0);
+            }
+        });
+    }
+
+    function onLeaveList() {
+        sp.rx.set(0);
+        sp.ry.set(0);
+        sp.sx.set(0);
+        sp.sy.set(0);
+        itemSp.forEach((s) => {
+            s.x.set(0);
+            s.y.set(0);
+        });
+    }
+
+    let specRaf: number | null = null;
+    function updateSpecular(e: PointerEvent) {
+        if (specRaf) return;
+        specRaf = requestAnimationFrame(() => {
+            specRaf = null;
+            const sr = panel.getBoundingClientRect();
+            if (!sr.width || !sr.height) return;
+            if (
+                e.clientX < sr.left ||
+                e.clientX > sr.right ||
+                e.clientY < sr.top ||
+                e.clientY > sr.bottom
+            )
+                return;
+            specular.style.setProperty(
+                "--lgy",
+                ((e.clientY - sr.top) / sr.height) * 100 + "%",
+            );
+            specular.style.setProperty(
+                "--lgh",
+                Math.max(28, Math.round(Math.min(sr.width, sr.height) * 0.32)) +
+                    "px",
+            );
+        });
+    }
+
+    let lastT = performance.now();
+    function tick(now: number) {
+        const dt = Math.min((now - lastT) / 1000, 0.04);
+        lastT = now;
+        for (const k in sp) (sp as any)[k].step(dt);
+        itemSp.forEach((s) => {
+            s.x.step(dt);
+            s.y.step(dt);
+        });
+
+        panel.style.opacity = String(sp.opacity.value);
+        panel.style.top = sp.top.value + "px";
+        panel.style.left = sp.left.value + "px";
+        panel.style.width = sp.width.value + "px";
+        panel.style.height = sp.height.value + "px";
+        panel.style.borderRadius = sp.br.value + "px";
+        panel.style.transformOrigin = `${origin.ox}% ${origin.oy}%`;
+        panel.style.transform = `rotateX(${sp.rx.value}deg) rotateY(${sp.ry.value}deg) translate3d(${sp.sx.value}px,${sp.sy.value}px,0)`;
+
+        items.forEach((item, i) => {
+            const inner = item.querySelector<HTMLElement>(".item-inner");
+            if (inner)
+                inner.style.transform = `translate3d(${itemSp[i].x.value}px,${itemSp[i].y.value}px,0)`;
+        });
+
+        requestAnimationFrame(tick);
+    }
+
+    items.forEach((item, i) => {
+        item.addEventListener("mouseenter", () => enter(i));
+        item.addEventListener("mouseleave", leave);
+    });
+    list.addEventListener("mousemove", onMove);
+    list.addEventListener("mouseleave", onLeaveList);
+    window.addEventListener("pointermove", updateSpecular, { passive: true });
+    window.addEventListener("resize", () => {
+        if (activeIdx !== null) {
+            currentRect = itemRect(activeIdx);
+            sp.top.set(currentRect.top);
+            sp.left.set(currentRect.left);
+            sp.width.set(currentRect.width);
+            sp.height.set(currentRect.height);
+        }
+    });
+
+    requestAnimationFrame(tick);
+</script>

@@ -1,0 +1,85 @@
+---
+import GlassList from "../components/GlassList.astro";
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="textviolence, DevOps Engineer" />
+        <meta
+            property="og:description"
+            content="The website and portfolio of textviolence."
+        />
+        <meta property="og:site_name" content="textviolence" />
+        <meta property="og:image" content="/og.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="twitter:image" content="/og.png" />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:creator" content="gavmn" />
+        <meta
+            property="twitter:title"
+            content="textviolence, DevOps Engineer"
+        />
+        <meta
+            property="twitter:description"
+            content="The website and portfolio of textviolence."
+        />
+        <title>textviolence, DevOps Engineer</title>
+        <meta
+            name="description"
+            content="The website and portfolio of textviolence."
+        />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+    </head>
+    <body>
+        <div class="md:flex md:flex-row md:justify-center">
+            <div class="md:min-w-lg md:w-full md:max-w-2xl md:mx-auto">
+                <div class="flex flex-col justify-start max-w-2xl px-8 py-24">
+                    <div class="grid w-8 h-8 mb-8 fade-in">
+                        <img
+                            alt="textviolence"
+                            loading="lazy"
+                            width="128"
+                            height="128"
+                            decoding="async"
+                            class="rounded-full object-cover"
+                            src="/avatar.jpg"
+                        />
+                    </div>
+
+                    <div class="flex flex-col gap-12 origin-left">
+                        <div class="flex flex-col gap-1 w-fit fade-in">
+                            <h1 class="inline font-medium">textviolence</h1>
+                            <h2>DevOps Engineer</h2>
+                        </div>
+
+                        <GlassList />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fixed top-0 left-1/2 w-full h-screen hidden md:block"></div>
+    </body>
+</html>
+
+<script>
+    requestAnimationFrame(() => {
+        document
+            .querySelectorAll(".fade-in")
+            .forEach((el, i) =>
+                setTimeout(() => el.classList.add("visible"), i * 80),
+            );
+        document
+            .querySelectorAll(".fade-child")
+            .forEach((el, i) =>
+                setTimeout(() => el.classList.add("visible"), 300 + i * 80),
+            );
+    });
+</script>

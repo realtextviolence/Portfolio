@@ -1,0 +1,51 @@
+---
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>404 — textviolence</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+  </head>
+  <body>
+    <div class="md:flex md:flex-row md:justify-center">
+      <div class="md:min-w-lg md:w-full md:max-w-2xl md:mx-auto">
+        <div class="flex flex-col justify-start max-w-2xl px-8 py-24">
+
+          <div class="grid w-8 h-8 mb-8 group fade-in">
+            <a aria-label="Go to the homepage" href="/">
+              <img
+                alt="Gavin Nelson"
+                loading="lazy"
+                width="128"
+                height="128"
+                decoding="async"
+                class="rounded-full object-cover"
+                src="/avatar.jpg"
+              />
+            </a>
+          </div>
+
+          <div class="flex flex-col gap-6 fade-in">
+            <div class="flex flex-col gap-1 w-fit">
+              <h1 class="inline font-medium">Page not found</h1>
+              <p class="text-zinc-400">There's nothing at this address.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script>
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.fade-in').forEach((el, i) =>
+      setTimeout(() => el.classList.add('visible'), i * 80));
+  });
+</script>
